@@ -118,6 +118,8 @@ import { createServerModuleMap } from './action-utils'
 import { isNodeNextRequest } from '../base-http/helpers'
 import { parseParameter } from '../../shared/lib/router/utils/route-regex'
 import { parseRelativeUrl } from '../../shared/lib/router/utils/parse-relative-url'
+import type LRUCache from 'next/dist/compiled/lru-cache'
+import type { CachedFetchData } from '../response-cache'
 
 export type GetDynamicParamFromSegment = (
   // [slug] / [[slug]] / [...slug]
@@ -1482,7 +1484,8 @@ export type AppPageRender = (
   res: BaseNextResponse,
   pagePath: string,
   query: NextParsedUrlQuery,
-  renderOpts: RenderOpts
+  renderOpts: RenderOpts,
+  fastRefreshFetchCache?: LRUCache<string, CachedFetchData>
 ) => Promise<RenderResult<AppPageRenderResultMetadata>>
 
 export const renderToHTMLOrFlight: AppPageRender = (
@@ -1490,7 +1493,8 @@ export const renderToHTMLOrFlight: AppPageRender = (
   res,
   pagePath,
   query,
-  renderOpts
+  renderOpts,
+  fastRefreshFetchCache
 ) => {
   if (!req.url) {
     throw new Error('Invalid URL')
@@ -1508,7 +1512,7 @@ export const renderToHTMLOrFlight: AppPageRender = (
 
   return withRequestStore(
     renderOpts.ComponentMod.requestAsyncStorage,
-    { req, url, res, renderOpts, isFastRefresh },
+    { req, url, res, renderOpts, isFastRefresh, fastRefreshFetchCache },
     (requestStore) =>
       withStaticGenerationStore(
         renderOpts.ComponentMod.staticGenerationAsyncStorage,
